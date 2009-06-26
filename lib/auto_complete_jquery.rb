@@ -37,18 +37,12 @@ module AutoCompleteJquery
         find_options = { 
           :conditions => [ "LOWER(#{method}) LIKE ?", '%' + params[:q].downcase + '%' ], 
           :order => "#{method} ASC",
-          :select => "#{object_constant.table_name}.#{object_constant.primary_key},#{object_constant.table_name}.#{method}",
+          :select => "#{object_constant.table_name}.#{method}",
           :limit => 10 }.merge!(options)
         
-        @items = object_constant.find(:all, find_options)
+        @items = object_constant.find(:all, find_options).collect(&method)
 
-        if block_given?
-          content = yield(@items)
-        else
-          content = @items.map{|item| "#{item.send(method)}|#{item.send(object_constant.primary_key)}"}.join("\n")
-        end
-        render :text => content
-
+        render :text => @items.join("\n")
       end
     end
   end
