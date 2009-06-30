@@ -1,5 +1,3 @@
-require 'map_by_method'
-
 module AutoCompleteJquery      
   
   def self.included(base)
@@ -26,6 +24,7 @@ module AutoCompleteJquery
   #   auto_complete_for :post, :title, :limit => 15, :order => 'created_at DESC'
   #
   # auto_complete_for allows you to pass multiple attributes if you want to return a full name for example
+  # NOTE: this will not work with jquery.autocomplete using the option mustMatch
   #   auto_complete_for :user, [:first_name, :last_name]
   #     AND you can also pass a delimiter if you want, it defaults to a " " (space)
   #   auto_complete_for :user, [:first_name, :last_name], :delimiter => ","
@@ -38,6 +37,9 @@ module AutoCompleteJquery
   # * http://www.dyve.net/jquery/?autocomplete
   module ClassMethods
     def auto_complete_for(object, method=[], options = {})
+      # define_method should not require array, allow non array input
+      method = [method] unless method.is_a?(Array)
+
       define_method("auto_complete_for_#{object}_#{method.join("_")}") do
         object_constant = object.to_s.camelize.constantize
         options[:delimiter] ||= " "
@@ -48,12 +50,12 @@ module AutoCompleteJquery
         
         # assemble the conditions
         conditions = ""
-        selects = ""
+        selects = "#{object_constant.table_name}.id,"
         method = [method] unless method.is_a?(Array)
         method.each do |arg|
           conditions << "LOWER(#{arg}) LIKE ?"
           conditions << " OR " unless arg == method.last
-          
+
           selects << "#{object_constant.table_name}.#{arg}"
           selects << "," unless arg == method.last
         end
@@ -66,17 +68,22 @@ module AutoCompleteJquery
           :select => selects,
           :limit => 10 }.merge!(options)
         
-                
-        map_method = "map_by"
-        method.each do |m| 
-          map_method << "_#{m}"
-          map_method << "_and" unless m == method.last
+        @items = object_constant.find(:all, find_options)
+
+        if block_given?
+          content = yield(@items)
+        else
+          content = @items.map{ |item| 
+            values = []
+            method.each do |m|
+              values << item.send(m)
+            end
+            "#{values.join(delimiter)}|#{item.send(object_constant.primary_key)}"
+          }.join("\n")
         end
-        
-        @items = object_constant.find(:all, find_options).send(map_method.to_sym)
-        @items.map! { |i| i.join(delimiter) } unless method.length == 1
-        
-        render :text => @items.join("\n")
+
+        render :text => content 
+
       end
     end
   end
