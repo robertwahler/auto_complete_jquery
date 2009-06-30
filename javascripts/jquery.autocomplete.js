@@ -289,7 +289,25 @@ $.Autocompleter = function(input, options) {
 		select.hide();
 		clearTimeout(timeout);
 		stopLoading();
-		if (options.mustMatch) {
+		if (options.mustMatchCache) {
+       var input_value = $input.attr("value");
+       if (!cache.contains(input_value))
+       {
+         if (options.multiple) {
+           var words = trimWords($input.val()).slice(0, -1);
+           $input.val( words.join(options.multipleSeparator) + (words.length ? options.multipleSeparator : "") );
+         }
+         else {
+           $input.val( "" );
+         }
+         options.afterNoMatch();
+         if (options.hiddenId != "") {
+           var hidden_elem =  $(options.hiddenId);
+           hidden_elem.attr("value", ""); 
+         }
+       }
+    }
+    else if (options.mustMatch) {
 			// call search and run callback
 			$input.search(
 				function (result){
@@ -301,6 +319,11 @@ $.Autocompleter = function(input, options) {
 						}
 						else
 							$input.val( "" );
+            options.afterNoMatch();
+            if (options.hiddenId != "") {
+              var hidden_elem =  $(options.hiddenId );
+              hidden_elem.attr("value", ""); 
+            }
 					}
 				}
 			);
@@ -397,6 +420,9 @@ $.Autocompleter.defaults = {
 	cacheLength: 10,
 	max: 100,
 	mustMatch: false,
+  hiddenId: "",
+  afterNoMatch: function() { return; }, 
+  matchMatchCache: false,
 	extraParams: {},
 	selectFirst: true,
 	formatItem: function(row) { return row[0]; },
@@ -417,10 +443,22 @@ $.Autocompleter.Cache = function(options) {
 	var data = {};
 	var length = 0;
 	
+	function matchExact(s, sub) {
+		if (!options.matchCase) 
+    {
+			s = s.toLowerCase();
+			sub = sub.toLowerCase();
+    }
+		return s == sub
+	};
+
 	function matchSubset(s, sub) {
 		if (!options.matchCase) 
 			s = s.toLowerCase();
 		var i = s.indexOf(sub);
+		if (options.matchContains == "word"){
+			i = s.toLowerCase().search("\\b" + sub.toLowerCase());
+		}
 		if (i == -1) return false;
 		return i == 0 || options.matchContains;
 	};
@@ -494,14 +532,41 @@ $.Autocompleter.Cache = function(options) {
 		data = {};
 		length = 0;
 	}
+
+  // return true if the exact_word is in our cache
+  // i.e. any of the string values pulled from a URL
+  // This allows usage of mustMatch without a callback to the URL
+  function cacheContains(exact_word){
+    var found_it = false;
+    for( var k in data ){
+      // don't search through the stMatchSets[""] (minChars: 0) cache
+      // this prevents duplicates
+      if( k.length > 0 ){
+        var c = data[k];
+        $.each(c, function(i, x) {
+          if (matchExact(x.value, exact_word)) {
+            found_it = true;
+            return false;
+          }
+        });
+      }
+      if (found_it) { 
+        break;
+      }
+    }				
+    return found_it;
+  }
 	
 	return {
 		flush: flush,
 		add: add,
 		populate: populate,
+		contains: cacheContains,
 		load: function(q) {
+      var cc = cacheContains(q);
 			if (!options.cacheLength || !length)
 				return null;
+
 			/* 
 			 * if dealing w/local data and matchContains than we must make sure
 			 * to loop through all the data collections looking for matches
