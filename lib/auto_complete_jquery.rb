@@ -35,8 +35,25 @@ module AutoCompleteJquery
   # For more on jQuery auto-complete, see the docs for the jQuery autocomplete 
   # plugin used in conjunction with this plugin:
   # * http://www.dyve.net/jquery/?autocomplete
+  #
+  # Option hash:
+  #
+  # :collection_instance_variable
+  #
+  # pass in the name of an instance variable w/o the '@' to bypass
+  # SQL and provide autocomplete from a collection.  Currently, this
+  # only works for single methods not an array of methods.  
+  #
+  # example, pull data from @tags, no SQL used:
+  # auto_complete_for :tag, :name, :collection_instance_variable => :tags
+  
   module ClassMethods
+
     def auto_complete_for(object, method=[], options = {})
+      if options.has_key?(:collection_instance_variable) && method.is_a?(Array)
+        raise ArgumentError, "method array cannot be combined with :collection_instance_variable option" 
+      end
+
       # define_method should not require array, allow non array input
       method = [method] unless method.is_a?(Array)
 
@@ -47,28 +64,36 @@ module AutoCompleteJquery
         
         delimiter = options[:delimiter]
         options.delete :delimiter
-        
-        # assemble the conditions
-        conditions = ""
-        selects = "#{object_constant.table_name}.id,"
-        method = [method] unless method.is_a?(Array)
-        method.each do |arg|
-          conditions << "LOWER(#{arg}) LIKE ?"
-          conditions << " OR " unless arg == method.last
 
-          selects << "#{object_constant.table_name}.#{arg}"
-          selects << "," unless arg == method.last
+        collection_instance_variable = options.delete(:collection_instance_variable)
+
+        if collection_instance_variable
+          collection = instance_variable_get('@' + collection_instance_variable.to_s)
+          filter = params[:q]
+          @items = collection.find_all{ |item| item.send(method.first.to_s) =~ /#{filter}/ }
+        else
+          # assemble the conditions
+          conditions = ""
+          selects = "#{object_constant.table_name}.id,"
+          method = [method] unless method.is_a?(Array)
+          method.each do |arg|
+            conditions << "LOWER(#{arg}) LIKE ?"
+            conditions << " OR " unless arg == method.last
+
+            selects << "#{object_constant.table_name}.#{arg}"
+            selects << "," unless arg == method.last
+          end
+          conditions = conditions.to_a
+          filters = "%#{params[:q].downcase}%".to_a*method.length
+          filters.each { |filter| conditions.push filter }
+          
+          find_options = { 
+            :conditions => conditions, 
+            :select => selects,
+            :limit => 10 }.merge!(options)
+          
+          @items = object_constant.find(:all, find_options)
         end
-        conditions = conditions.to_a
-        filters = "%#{params[:q].downcase}%".to_a*method.length
-        filters.each { |filter| conditions.push filter }
-        
-        find_options = { 
-          :conditions => conditions, 
-          :select => selects,
-          :limit => 10 }.merge!(options)
-        
-        @items = object_constant.find(:all, find_options)
 
         if block_given?
           content = yield(@items)
