@@ -70,7 +70,10 @@ module AutoCompleteJquery
         if collection_instance_variable
           collection = instance_variable_get('@' + collection_instance_variable.to_s)
           filter = params[:q]
-          @items = collection.find_all{ |item| item.send(method.first.to_s) =~ /#{filter}/ }
+          @items = collection.find_all { |item| 
+            filter_for = item.send(method.first.to_s) 
+            filter_for.to_s =~ /#{filter}/ 
+          }
         else
           # assemble the conditions
           conditions = ""
