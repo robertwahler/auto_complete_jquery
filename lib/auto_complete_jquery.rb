@@ -64,16 +64,26 @@ module AutoCompleteJquery
         
         delimiter = options[:delimiter]
         options.delete :delimiter
+        limit = options[:limit] || 10 
 
         collection_instance_variable = options.delete(:collection_instance_variable)
 
         if collection_instance_variable
           collection = instance_variable_get('@' + collection_instance_variable.to_s)
-          filter = params[:q]
-          @items = collection.find_all { |item| 
-            filter_for = item.send(method.first.to_s) 
-            filter_for.to_s =~ /#{filter}/ 
-          }
+          if collection
+            filter = params[:q]
+            filter_by = method.first.to_s
+            i = 0
+            @items = collection.find_all { |item| 
+              filter_for = item.send(filter_by) 
+              filter_for.to_s =~ /#{filter}/
+            }
+            if @items
+              @items.sort! { |a, b| a[filter_by] <=> b[filter_by] }
+              # truncate at limit exclusive of the "limit" endpoint
+              @items = @items[0...limit]
+            end
+          end
         else
           # assemble the conditions
           conditions = ""
@@ -93,14 +103,15 @@ module AutoCompleteJquery
           find_options = { 
             :conditions => conditions, 
             :select => selects,
-            :limit => 10 }.merge!(options)
+            :limit => limit }.merge!(options)
           
           @items = object_constant.find(:all, find_options)
         end
 
+        content = ""
         if block_given?
           content = yield(@items)
-        else
+        elsif @items
           content = @items.map{ |item| 
             values = []
             method.each do |m|
