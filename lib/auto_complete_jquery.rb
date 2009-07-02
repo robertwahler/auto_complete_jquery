@@ -71,11 +71,10 @@ module AutoCompleteJquery
         if collection_instance_variable
           collection = instance_variable_get('@' + collection_instance_variable.to_s)
           if collection
-            filter = params[:q]
+            filter = params[:q].to_s.downcase
             filter_by = method.first.to_s
-            i = 0
             @items = collection.find_all { |item| 
-              filter_for = item.send(filter_by) 
+              filter_for = item.send(filter_by).to_s.downcase
               filter_for.to_s =~ /#{filter}/
             }
             if @items
@@ -97,7 +96,7 @@ module AutoCompleteJquery
             selects << "," unless arg == method.last
           end
           conditions = conditions.to_a
-          filters = "%#{params[:q].downcase}%".to_a*method.length
+          filters = "%#{params[:q].to_s.downcase}%".to_a*method.length
           filters.each { |filter| conditions.push filter }
           
           find_options = { 
