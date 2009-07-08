@@ -72,7 +72,7 @@ module AutoCompleteJquery
           collection = instance_variable_get('@' + collection_instance_variable.to_s)
           if collection
             filter = params[:q].to_s.downcase
-            filter_by = method.first.to_s
+            filter_by = options.delete(:collection_filter_by) || method.first.to_s
             @items = collection.find_all { |item| 
               filter_for = item.send(filter_by).to_s.downcase
               filter_for.to_s =~ /#{filter}/
