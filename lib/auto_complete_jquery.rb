@@ -51,7 +51,7 @@ module AutoCompleteJquery
 
     def auto_complete_for(object, method=[], options = {})
       if options.has_key?(:collection_instance_variable) && method.is_a?(Array)
-        raise ArgumentError, "method array cannot be combined with :collection_instance_variable option" 
+        raise(ArgumentError, "method array cannot be combined with :collection_instance_variable option")
       end
 
       # define_method should not require array, allow non array input
@@ -59,28 +59,29 @@ module AutoCompleteJquery
 
       define_method("auto_complete_for_#{object}_#{method.join("_")}") do
         object_constant = object.to_s.camelize.constantize
-        options[:delimiter] ||= " "
-        options[:order] ||= "#{method.first} ASC"
+        ac_options = options.dup
+        ac_options[:delimiter] ||= " "
+        ac_options[:order] ||= "#{method.first} ASC"
         
-        delimiter = options[:delimiter]
-        options.delete :delimiter
-        limit = options[:limit] || 10 
+        delimiter = ac_options[:delimiter]
+        ac_options.delete :delimiter
+        limit = ac_options[:limit] || 10 
 
-        collection_instance_variable = options.delete(:collection_instance_variable)
+        collection_instance_variable = ac_options.delete(:collection_instance_variable)
 
         if collection_instance_variable
           collection = instance_variable_get('@' + collection_instance_variable.to_s)
           if collection
             filter = params[:q].to_s.downcase
-            filter_by = options.delete(:collection_filter_by) || method.first.to_s
-            @items = collection.find_all { |item| 
+            filter_by = ac_options.delete(:collection_filter_by) || method.first.to_s
+            items = collection.find_all { |item| 
               filter_for = item.send(filter_by).to_s.downcase
               filter_for.to_s =~ /#{filter}/
             }
-            if @items
-              @items.sort! { |a, b| a[filter_by] <=> b[filter_by] }
+            if items
+              items.sort! { |a, b| a[filter_by] <=> b[filter_by] }
               # truncate at limit exclusive of the "limit" endpoint
-              @items = @items[0...limit]
+              items = items[0...limit]
             end
           end
         else
@@ -102,16 +103,16 @@ module AutoCompleteJquery
           find_options = { 
             :conditions => conditions, 
             :select => selects,
-            :limit => limit }.merge!(options)
+            :limit => limit }.merge!(ac_options)
           
-          @items = object_constant.find(:all, find_options)
+          items = object_constant.find(:all, find_options)
         end
 
         content = ""
         if block_given?
-          content = yield(@items)
-        elsif @items
-          content = @items.map{ |item| 
+          content = yield(items)
+        elsif items
+          content = items.map{ |item| 
             values = []
             method.each do |m|
               values << item.send(m)
