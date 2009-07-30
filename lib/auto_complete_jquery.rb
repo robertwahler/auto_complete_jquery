@@ -79,7 +79,7 @@ module AutoCompleteJquery
               filter_for.to_s =~ /#{filter}/
             }
             if items
-              items.sort! { |a, b| a[filter_by] <=> b[filter_by] }
+              items.sort! { |a, b| a.send(filter_by) <=> b.send(filter_by) }
               # truncate at limit exclusive of the "limit" endpoint
               items = items[0...limit]
             end
