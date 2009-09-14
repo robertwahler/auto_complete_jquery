@@ -100,6 +100,7 @@ module AutoCompleteJquery
           filters = "%#{params[:q].to_s.downcase}%".to_a*method.length
           filters.each { |filter| conditions.push filter }
           
+          # These options can be overridden by the subsequent merge ac_options below
           find_options = { 
             :conditions => conditions, 
             :select => selects,
