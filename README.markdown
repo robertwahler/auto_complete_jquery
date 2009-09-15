@@ -21,29 +21,29 @@ REQUIREMENTS:
 INSTALLATION:
 =============
 
-1.  Install this pluging 
+Install this plugin 
 
-    ./script/plugin install git://github.com/robertwahler/auto_complete_jquery.git
+      ./script/plugin install git://github.com/robertwahler/auto_complete_jquery.git
 
-2.  Copy the modified jquery.autocomplete.js and assets to your project's public folder 
+Copy the modified jquery.autocomplete.js and assets to your project's public folder 
 
-    cp vendor/plugins/auto_complete_jquery/images/indicator.gif public/images/
-    cp vendor/plugins/auto_complete_jquery/javascripts/jquery.autocomplete.js public/javascripts/
-    cp vendor/plugins/auto_complete_jquery/stylesheets/jquery.autocomplete.css public/stylesheets/
+       cp vendor/plugins/auto_complete_jquery/images/indicator.gif public/images/
+       cp vendor/plugins/auto_complete_jquery/javascripts/jquery.autocomplete.js public/javascripts/
+       cp vendor/plugins/auto_complete_jquery/stylesheets/jquery.autocomplete.css public/stylesheets/
 
 or use the task:
 
-    rake autocomplete:install
+       rake autocomplete:install
 
-2. Add the javascript and css to your layout
+Add the javascript and CSS to your layout
 
-3. Insert something similar to the following into the controller that you are working on:
+Insert something similar to the following into the controller that you are working on:
 
         class BlogController < ApplicationController
           auto_complete_for :post, :title
         end
 
-4. Now insert the following into application.js or anywhere where you are loading events for Jquery:
+Now insert the following into application.js or anywhere where you are loading events for Jquery:
 
         $(document).ready(function() {
            $("input#post_title").autocomplete("auto_complete_for_post_title")
@@ -67,7 +67,7 @@ And you want to use it in a view located in "/blogs", adjust your code in applic
 If you have many autocompletes, you could iterate over the entire page with jQuery's $.each.
 
 
-4. Here's what the view might look like:
+Here's what the view might look like:
 
         <% form_for @post do |f| %>
           ....
