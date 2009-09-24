@@ -56,8 +56,9 @@ module AutoCompleteJquery
 
       # define_method should not require array, allow non array input
       method = [method] unless method.is_a?(Array)
+      method_name = options.delete(:method_name) || "auto_complete_for_#{object}_#{method.join("_")}"
 
-      define_method("auto_complete_for_#{object}_#{method.join("_")}") do
+      define_method(method_name) do
         object_constant = object.to_s.camelize.constantize
         ac_options = options.dup
         ac_options[:delimiter] ||= " "
