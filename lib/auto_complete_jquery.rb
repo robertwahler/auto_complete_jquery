@@ -97,8 +97,8 @@ module AutoCompleteJquery
             selects << "#{object_constant.table_name}.#{arg}"
             selects << "," unless arg == method.last
           end
-          conditions = conditions.to_a
-          filters = "%#{params[:q].to_s.downcase}%".to_a*method.length
+          conditions = Array(conditions)
+          filters = Array("%#{params[:q].to_s.downcase}%")*method.length
           filters.each { |filter| conditions.push filter }
           
           # These options can be overridden by the subsequent merge ac_options below
