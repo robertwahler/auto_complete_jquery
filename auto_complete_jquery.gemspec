@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
 		"Rakefile", 
 		"auto_complete_jquery.gemspec", 
 		"init.rb", 
+		"rails/init.rb",
 		"lib/auto_complete_jquery.rb"]
   s.rdoc_options = ["--main", "README"]
   s.extra_rdoc_files = ["CHANGELOG", "README"]
