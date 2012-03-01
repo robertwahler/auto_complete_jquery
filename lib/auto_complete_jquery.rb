@@ -1,8 +1,4 @@
-module AutoCompleteJquery      
-  
-  def self.included(base)
-    base.extend(ClassMethods)
-  end
+module AutoCompleteJquery
 
   #
   # Example:
@@ -17,7 +13,7 @@ module AutoCompleteJquery
   #
   # By default, auto_complete_for limits the results to 10 entries,
   # and sorts by the given field.
-  # 
+  #
   # auto_complete_for takes a third parameter, an options hash to
   # the find method used to search for the records:
   #
@@ -28,11 +24,11 @@ module AutoCompleteJquery
   #   auto_complete_for :user, [:first_name, :last_name]
   #     AND you can also pass a delimiter if you want, it defaults to a " " (space)
   #   auto_complete_for :user, [:first_name, :last_name], :delimiter => ","
-  # 
-  # For help on defining text input fields with autocompletion, 
+  #
+  # For help on defining text input fields with autocompletion,
   # see ActionView::Helpers::JavaScriptHelper.
   #
-  # For more on jQuery auto-complete, see the docs for the jQuery autocomplete 
+  # For more on jQuery auto-complete, see the docs for the jQuery autocomplete
   # plugin used in conjunction with this plugin:
   # * http://www.dyve.net/jquery/?autocomplete
   #
@@ -42,11 +38,11 @@ module AutoCompleteJquery
   #
   # pass in the name of an instance variable w/o the '@' to bypass
   # SQL and provide autocomplete from a collection.  Currently, this
-  # only works for single methods not an array of methods.  
+  # only works for single methods not an array of methods.
   #
   # example, pull data from @tags, no SQL used:
   # auto_complete_for :tag, :name, :collection_instance_variable => :tags
-  
+
   module ClassMethods
 
     def auto_complete_for(object, method=[], options = {})
@@ -63,10 +59,10 @@ module AutoCompleteJquery
         ac_options = options.dup
         ac_options[:delimiter] ||= " "
         ac_options[:order] ||= "#{method.first} ASC"
-        
+
         delimiter = ac_options[:delimiter]
         ac_options.delete :delimiter
-        limit = ac_options[:limit] || 10 
+        limit = ac_options[:limit] || 10
 
         collection_instance_variable = ac_options.delete(:collection_instance_variable)
 
@@ -75,7 +71,7 @@ module AutoCompleteJquery
           if collection
             filter = params[:q].to_s.downcase
             filter_by = ac_options.delete(:collection_filter_by) || method.first.to_s
-            items = collection.find_all { |item| 
+            items = collection.find_all { |item|
               filter_for = item.send(filter_by).to_s.downcase
               filter_for.to_s =~ /#{filter}/
             }
@@ -100,13 +96,13 @@ module AutoCompleteJquery
           conditions = Array(conditions)
           filters = Array("%#{params[:q].to_s.downcase}%")*method.length
           filters.each { |filter| conditions.push filter }
-          
+
           # These options can be overridden by the subsequent merge ac_options below
-          find_options = { 
-            :conditions => conditions, 
+          find_options = {
+            :conditions => conditions,
             :select => selects,
             :limit => limit }.merge!(ac_options)
-          
+
           items = object_constant.find(:all, find_options)
         end
 
@@ -114,7 +110,7 @@ module AutoCompleteJquery
         if block_given?
           content = yield(items)
         elsif items
-          content = items.map{ |item| 
+          content = items.map{ |item|
             values = []
             method.each do |m|
               values << item.send(m)
@@ -123,10 +119,13 @@ module AutoCompleteJquery
           }.join("\n")
         end
 
-        render :text => content 
+        render :text => content
 
       end
     end
   end
-  
+
 end
+
+ActionController::Base.send :include, AutoCompleteJquery::ClassMethods
+ActionController::Base.send :extend, AutoCompleteJquery::ClassMethods
